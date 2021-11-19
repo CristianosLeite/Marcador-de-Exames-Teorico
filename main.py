@@ -31,9 +31,9 @@ def create_onedrive_direct_download(onedrive_link_file):
 
 
 # Faz o download da planilha compartilhada através do link, na memória.
-# Compartilhe a planilha com link e defina a variável onerivelink_link = "<link>"
 
-onedrive_link = "<link>"
+# Compartilhe a planilha com link e defina a variável onerivelink_link = <"link">
+onedrive_link = "your_shared_link"
 direct_link = create_onedrive_direct_download(onedrive_link)
 data = pd.read_excel(direct_link, index_col=False)
 data_df = data.loc[(data['TAXA'] == "PG") & (data['SITUAÇÃO'] == "PENDENTE"), ["NOME DO ALUNO", "CPF"]]
