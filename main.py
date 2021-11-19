@@ -105,7 +105,7 @@ def resolve_erro():
 
 
 def mudar_turno():
-    # Insere os dados novamente, porém, no período da tarde.
+    # Insere os dados novamente, porém, no próximo turno disponível.
     try:
         # Se <try> == TRUE, vai para o próximo aluno
         driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
