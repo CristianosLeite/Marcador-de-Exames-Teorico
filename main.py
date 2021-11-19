@@ -145,13 +145,9 @@ def inserir_dados():
 # Marca os exames
 
 for i, nome in enumerate(data_df['NOME DO ALUNO']):
-    cpf_df: str = data_df['CPF'].iloc[0 + i]
+    cpf_df: str = data_df['CPF'].iloc[i]
     # A sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
-    num_cpf_char = 11  # quantidade de números em um CPF
-    if len(f'{cpf_df}') < num_cpf_char:  # Caso o cpf possua menos de 11 caracteres
-        cpf: str = '%011d' % int(cpf_df)  # A quantidade é completada com zeros
-    else:
-        cpf: str = cpf_df  # O cpf não inicia com zeros
+    cpf: str = '%011d' % int(cpf_df)  # Completa o cpf com os zeros elimidados
     try:
         inserir_dados()
     except Exception:
@@ -166,13 +162,9 @@ for i, nome in enumerate(data_df['NOME DO ALUNO']):
 # Imprime as senhas
 
 for i, nome in enumerate(data_df['NOME DO ALUNO']):
-    cpf_df: str = data_df['CPF'].iloc[0 + i]
+    cpf_df: str = data_df['CPF'].iloc[i]
     # A sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
-    num_cpf_char = 11  # quantidade de números em um CPF
-    if len(f'{cpf_df}') < num_cpf_char:  # Caso o cpf possua menos de 11 caracteres
-        cpf: str = '%011d' % int(cpf_df)  # A quantidade é completada com zeros
-    else:
-        cpf: str = cpf_df  # O cpf não inicia com zeros
+    cpf: str = '%011d' % int(cpf_df)  # Completa o cpf com os zeros elimidados
     # Vai para a página de impressão de senhas
     driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0327.asp")
     try:
