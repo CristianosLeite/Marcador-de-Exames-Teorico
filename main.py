@@ -81,15 +81,15 @@ date = time.strftime("%d %b %Y")
 
 def print_screen():
     # print screen
-    element = driver.find_element(By.CSS_SELECTOR, 'body')
-    element.screenshot(f'{my_path}/{nome}_{cpf}.png')
+    driver.find_element(
+        By.CSS_SELECTOR, 'body').screenshot(f'{my_path}/{nome}_{cpf}.png')
     time.sleep(1)
 
 
 def make_dir():
     # Cria um diretório no caminho especificado
-    if not os.path.isdir(mypath):
-        os.makedirs(mypath)
+    if not os.path.isdir(my_path):
+        os.makedirs(my_path)
 
 
 def resolve_erro():
