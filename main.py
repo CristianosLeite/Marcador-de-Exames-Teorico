@@ -168,7 +168,7 @@ for i, nome in enumerate(data_df['NOME DO ALUNO']):
     # Vai para a página de impressão de senhas
     driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0327.asp")
     try:
-        # Tenta imprimir as senhas
+        # Tenta imprimir as senhas. Caso não agendado, será impresso o motivo e o sistema retornará um erro.
         driver.find_element(By.XPATH, textbox_cpf).send_keys(f"{cpf}" + Keys.ENTER)
         my_path = f'./senhas/{date}/'  # Define o caminho que a pasta de senhas será criada
         make_dir()
@@ -176,7 +176,7 @@ for i, nome in enumerate(data_df['NOME DO ALUNO']):
         print_screen()
         driver.find_element(By.XPATH, voltarSenha).click()
     except Exception:
-        # Caso não consiga, imprime o motivo e pula para o próximo aluno
+        # Caso erro, volta e pula para o próximo aluno
         driver.find_element(By.XPATH, '/html/body/center/input').click()
         driver.find_element(By.XPATH, voltar).click()
         time.sleep(1)
