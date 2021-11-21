@@ -31,9 +31,9 @@ def create_onedrive_direct_download(onedrive_link_file):
 
 
 # Faz o download da planilha compartilhada através do link, na memória.
-# Compartilhe a planilha com link e defina a variável onerivelink_link = "<link>"
 
-onedrive_link = "<link>"
+# Compartilhe a planilha com link e defina a variável onerivelink_link = <"link">
+onedrive_link = "https://1drv.ms/x/s!AsUX_dGNWCM8hhgEu4GOUKJUR1Bc?e=pqnwzj"
 direct_link = create_onedrive_direct_download(onedrive_link)
 data = pd.read_excel(direct_link, index_col=False)
 data_df = data.loc[(data['TAXA'] == "PG") & (data['SITUAÇÃO'] == "PENDENTE"), ["NOME DO ALUNO", "CPF"]]
@@ -42,16 +42,18 @@ data_df = data.loc[(data['TAXA'] == "PG") & (data['SITUAÇÃO'] == "PENDENTE"), 
 
 # Em caso de erro, verificar se a versão do Chrome e do WebDriver são compatíveis
 # Caso o código seja compilado para um executável, o webdriver.exe deve ser copiado para a pasta do programa.
-driver = webdriver.Chrome()
+
+# Faz a instalação da extensão do plugin Signa - Prodemge 1.4.0.0
+executable_path = "./"
+os.environ["webdriver.chrome.driver"] = executable_path
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_extension('Signa - Prodemge 1.4.0.0.crx')
+driver = webdriver.Chrome(options=chrome_options)
 
 # É necessário instalar o plugin Signa da Prodemge para que o sistema Detrannet possa ser acessado.
 # Verificar se na máquina já tem instalado o executável Signa Prodemge,
 # disponível em: "https://wwws.prodemge.gov.br/images/Aplicativos/Signa-2.2.00-Prodemge.exe"
-driver.get(
-    "https://chrome.google.com/webstore/detail/signa-prodemge/idbpfpeogbhifooiagnbbdbffplkfcke?hl=pt-BR")
 
-# Defina o tempo necessário para que o código aguarde a instalação do plugin
-time.sleep(6)
 
 # indica qual página deve ser acessada
 driver.get(
@@ -68,7 +70,7 @@ driver.get(
 # Verifique a unidade de agendamento em sua cidade
 textbox_cpf = '/html/body/center/form/table/tbody/tr[2]/td[2]/input'
 listbox_unidade = '//*[@id="localExame"]'
-unidade = "<Unidade>"  # Alterar para a unidade de agendamento da sua cidade
+unidade = "UAI Sete Lagoas"  # Alterar para a unidade de agendamento da sua cidade
 listbox_turno = '//*[@id="turno"]'
 listbox_data = '//*[@id="ajaxInput"]/select'
 voltar = '/html/body/center/form/input[2]'
@@ -81,15 +83,15 @@ date = time.strftime("%d %b %Y")
 
 def print_screen():
     # print screen
-    element = driver.find_element(By.CSS_SELECTOR, 'body')
-    element.screenshot(f'{my_path}/{nome}_{cpf}.png')
+    driver.find_element(
+        By.CSS_SELECTOR, 'body').screenshot(f'{my_path}/{nome}_{cpf}.png')
     time.sleep(1)
 
 
 def make_dir():
     # Cria um diretório no caminho especificado
-    if not os.path.isdir(mypath):
-        os.makedirs(mypath)
+    if not os.path.isdir(my_path):
+        os.makedirs(my_path)
 
 
 def resolve_erro():
@@ -105,7 +107,7 @@ def resolve_erro():
 
 
 def mudar_turno():
-    # Insere os dados novamente, porém, no próximo turno.
+    # Insere os dados novamente, porém, no próximo turno disponível.
     try:
         # Se <try> == TRUE, vai para o próximo aluno
         driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
@@ -145,38 +147,29 @@ def inserir_dados():
 # Marca os exames
 
 for i, nome in enumerate(data_df['NOME DO ALUNO']):
-    cpf_df: str = data_df['CPF'].iloc[0 + i]
+    cpf_df: str = data_df['CPF'].iloc[i]
     # A sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
-    num_cpf_char = 11  # quantidade de números em um CPF
-    if len(f'{cpf_df}') < num_cpf_char:  # Caso o cpf possua menos de 11 caracteres
-        cpf: str = '%011d' % int(cpf_df)  # A quantidade é completada com zeros
-    else:
-        cpf: str = cpf_df  # O cpf não inicia com zeros
+    cpf: str = '%011d' % int(cpf_df)  # Completa o cpf com os zeros elimidados
     try:
         inserir_dados()
     except Exception:
         try:
-            mypath = f'./marcacaoLegislacao_logFile/{date}/'  # Define o caminho que a pasta de log será criada
+            my_path = f'./marcacaoLegislacao_logFile/{date}/'  # Define o caminho que a pasta de log será criada
             mudar_turno()
             resolve_erro()
         except Exception:
             exit()  # Caso ocorra uma excessão dentro de uma excessão o sistema encerra.
 
-
 # Imprime as senhas
 
 for i, nome in enumerate(data_df['NOME DO ALUNO']):
-    cpf_df: str = data_df['CPF'].iloc[0 + i]
+    cpf_df: str = data_df['CPF'].iloc[i]
     # A sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
-    num_cpf_char = 11  # quantidade de números em um CPF
-    if len(f'{cpf_df}') < num_cpf_char:  # Caso o cpf possua menos de 11 caracteres
-        cpf: str = '%011d' % int(cpf_df)  # A quantidade é completada com zeros
-    else:
-        cpf: str = cpf_df  # O cpf não inicia com zeros
+    cpf: str = '%011d' % int(cpf_df)  # Completa o cpf com os zeros elimidados
     # Vai para a página de impressão de senhas
     driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0327.asp")
     try:
-        # Tenta imprimir as senhas
+        # Tenta imprimir as senhas. Caso não agendado, será impresso o motivo e o sistema retornará um erro.
         driver.find_element(By.XPATH, textbox_cpf).send_keys(f"{cpf}" + Keys.ENTER)
         my_path = f'./senhas/{date}/'  # Define o caminho que a pasta de senhas será criada
         make_dir()
@@ -184,7 +177,7 @@ for i, nome in enumerate(data_df['NOME DO ALUNO']):
         print_screen()
         driver.find_element(By.XPATH, voltarSenha).click()
     except Exception:
-        # Caso não consiga, imprime o motivo e pula para o próximo aluno
+        # Caso erro, volta e pula para o próximo aluno
         driver.find_element(By.XPATH, '/html/body/center/input').click()
         driver.find_element(By.XPATH, voltar).click()
         time.sleep(1)
