@@ -1,11 +1,12 @@
 import base64
-import pandas as pd
-import time
 import os
+import time
+from sys import exit
+
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from sys import exit
 
 
 # Os dados dos alunos estão armazenados em uma planilha,
@@ -21,6 +22,7 @@ from sys import exit
 
 # Acessa a Planilha
 
+
 def create_onedrive_direct_download(onedrive_link_file):
     # Acessa a a API REST do one drive
     data_bytes64 = base64.b64encode(bytes(onedrive_link_file, 'utf-8'))
@@ -33,7 +35,7 @@ def create_onedrive_direct_download(onedrive_link_file):
 # Faz o download da planilha compartilhada através do link, na memória.
 
 # Compartilhe a planilha com link e defina a variável onerivelink_link = <"link">
-onedrive_link = "https://1drv.ms/x/s!AsUX_dGNWCM8hhgEu4GOUKJUR1Bc?e=pqnwzj"
+onedrive_link = "link"
 direct_link = create_onedrive_direct_download(onedrive_link)
 data = pd.read_excel(direct_link, index_col=False)
 data_df = data.loc[(data['TAXA'] == "PG") & (data['SITUAÇÃO'] == "PENDENTE"), ["NOME DO ALUNO", "CPF"]]
@@ -70,7 +72,7 @@ driver.get(
 # Verifique a unidade de agendamento em sua cidade
 textbox_cpf = '/html/body/center/form/table/tbody/tr[2]/td[2]/input'
 listbox_unidade = '//*[@id="localExame"]'
-unidade = "UAI Sete Lagoas"  # Alterar para a unidade de agendamento da sua cidade
+unidade = "<Unidade>"  # Alterar para a unidade de agendamento da sua cidade
 listbox_turno = '//*[@id="turno"]'
 listbox_data = '//*[@id="ajaxInput"]/select'
 voltar = '/html/body/center/form/input[2]'
@@ -100,34 +102,24 @@ def resolve_erro():
         driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
         driver.find_element(By.XPATH, limpar).click()
     except Exception:
-        # Se <try> == FALSE o sistema irá para a próxima etapa,
-        # caso a próxima etapa também seja == FALSE o sistema entrará em loop.
-        print_screen()
-        mudar_turno()
+        # Se houver uma exceção o sistema entrará em loop.
+        # Exemplo: Se o sistema for iniciado enquanto a marcação estiver fechada,
+        # o sistema continuará tentando marcar até que ela esteja aberta ou cumpra a cota máxima de excessões.
+        global turno
+        turno = 'manhã'  # Redefine o turno
+        mudar_turno()  # Os dados serão inseridos no período da manhã novamente
 
 
 def mudar_turno():
     # Insere os dados novamente, porém, no próximo turno disponível.
     try:
-        # Se <try> == TRUE, vai para o próximo aluno
+        # Caso <try> seja atendido, vai para o próximo aluno
         driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
-        driver.find_element(By.XPATH, textbox_cpf)
-        driver.find_element(By.XPATH, textbox_cpf).send_keys(f"{cpf}", Keys.TAB)
-        driver.find_element(By.XPATH, listbox_unidade).send_keys(unidade)
-        # <Keys.DOWN> agora é pressionado duas vezes.
-        driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.DOWN, Keys.TAB)
-        time.sleep(1)
-        driver.find_element(By.XPATH, listbox_data).send_keys(Keys.DOWN)
-        driver.find_element(By.XPATH, confirma).click()
-        driver.find_element(By.XPATH, confirma_exame).click()
-        driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
-        time.sleep(1)
+        inserir_dados()
     except Exception:
-        # O sistema retorna e se mantém em loop até o primeiro <try> ser atendido.
-        # Exemplo: Se o sistema for iniciado enquanto a marcação estiver fechada,
-        # o sistema continuará tentando marcar até que ela esteja aberta ou cumpra a cota máxima de excessões.
-        make_dir()
-        print_screen()
+        # O sistema retorna e se mantém em loop até <try> ser atendido.
+        make_dir()  # Cria a pasta de log
+        print_screen()  # Cria o log file
         resolve_erro()
 
 
@@ -135,8 +127,13 @@ def inserir_dados():
     # insere os dados na página de marcação, tenta marcar o exame e retorna
     driver.find_element(By.XPATH, textbox_cpf).send_keys(f"{cpf}", Keys.TAB)
     driver.find_element(By.XPATH, listbox_unidade).send_keys(unidade)
-    driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.TAB)
-    time.sleep(1)
+    if turno == 'manhã':
+        driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.TAB)
+        time.sleep(1)
+    else:
+        # <Keys.DOWN> agora é pressionado duas vezes.
+        driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.DOWN, Keys.TAB)
+        time.sleep(1)
     driver.find_element(By.XPATH, listbox_data).send_keys(Keys.DOWN)
     driver.find_element(By.XPATH, confirma).click()
     driver.find_element(By.XPATH, confirma_exame).click()
@@ -148,17 +145,19 @@ def inserir_dados():
 
 for i, nome in enumerate(data_df['NOME DO ALUNO']):
     cpf_df: str = data_df['CPF'].iloc[i]
-    # A sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
+    # O sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
     cpf: str = '%011d' % int(cpf_df)  # Completa o cpf com os zeros elimidados
+    turno = 'manhã'
     try:
         inserir_dados()
     except Exception:
+        turno = 'tarde'
+        my_path = f'./marcacaoLegislacao_logFile/{date}/'  # Define o caminho que a pasta de log será criada
         try:
-            my_path = f'./marcacaoLegislacao_logFile/{date}/'  # Define o caminho que a pasta de log será criada
             mudar_turno()
-            resolve_erro()
         except Exception:
             exit()  # Caso ocorra uma excessão dentro de uma excessão o sistema encerra.
+
 
 # Imprime as senhas
 
