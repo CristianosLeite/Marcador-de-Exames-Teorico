@@ -1,3 +1,17 @@
+# ##################################################################################################################
+# Os dados dos alunos estão armazenados em uma planilha,
+# para que os alunos sejam identificados é necessário acessar esta planilha.
+# Crie uma planilha em excel com os campos: 'TAXA', 'NOME DO ALUNO', 'CPF' e 'SITUAÇÃO'.
+# Só serão identificados os alunos que estiverem com o campo 'TAXA' marcado como "PG" e 'SITUAÇÃO' como "PENDENTE".
+# É importante que a planilha seja preenchida sempre com Uppercase.
+# Após a execução do script, altere a situação para que o sistema não tente marcar o exame novamente.
+# A planilha deverá ser compartilhada através de link e está disponível no OneDrive do usuário.
+# Para que a planilha fosse acessada, foi utilizada a API REST do OneDrive.
+# É necessário uma assinatura do Office 365. Se for uma versão business, é necessário o contexto de autenticação.
+# Verificar documentação API REST do SharePoint.
+# ###################################################################################################################
+
+
 import base64
 import os
 import time
@@ -9,16 +23,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
 
-# Os dados dos alunos estão armazenados em uma planilha,
-# para que os alunos sejam identificados é necessário acessar esta planilha.
-# Crie uma planilha em excel com os campos: 'TAXA', 'NOME DO ALUNO', 'CPF' e 'SITUAÇÃO'.
-# Só serão identificados os alunos que estiverem com o campo 'TAXA' marcado como "PG" e 'SITUAÇÃO' como "PENDENTE".
-# É importante que a planilha seja preenchida sempre com Uppercase.
-# Após a execução do script, altere a situação para que o sistema não tente marcar o exame novamente.
-# A planilha deverá ser compartilhada através de link e está disponível no OneDrive do usuário.
-# Para que a planilha fosse acessada, foi utilizada a API REST do OneDrive.
-# É necessário uma assinatura do Office 365. Se for uma versão business, é necessário o contexto de autenticação.
-# Verificar documentação API REST do SharePoint.
 
 # Acessa a Planilha
 
