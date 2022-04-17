@@ -89,12 +89,7 @@ driver.get(
 
 # Sem uso no momento
 def verifica_autenticacao():
-    driver.find_element(By.XPATH, '/html/body/p/table/tbody/tr[7]/td/b/font')
-    if True:
-        driver.quit()
-        exit()
-    else:
-        next
+    return
 
 
 # local para onde será feita a notificação do agendamento
@@ -106,7 +101,7 @@ def send_message():
 # Verifique a unidade de agendamento em sua cidade
 textbox_cpf = '/html/body/center/form/table/tbody/tr[2]/td[2]/input'
 listbox_unidade = '//*[@id="localExame"]'
-unidade = "unidade de agendamento"  # Alterar para a unidade de agendamento da sua cidade
+unidade = "unidade de atendimento"  # Alterar para a unidade de agendamento da sua cidade
 listbox_turno = '//*[@id="turno"]'
 listbox_data = '//*[@id="ajaxInput"]/select'
 voltar = '/html/body/center/form/input[2]'
@@ -151,7 +146,9 @@ def mudar_turno():
         driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
         inserir_dados()
     except Exception:
-        # O sistema retorna e se mantém em loop até <try> ser atendido.
+        # O sistema retorna e se mantém em loop até a condição ser atendida.
+        global my_path
+        my_path = f'./marcacaoLegislacao_logFile/{date}/'  # Define o caminho que a pasta de log será criada
         make_dir()  # Cria a pasta de log
         print_screen()  # Cria o log file
         resolve_erro()
@@ -195,7 +192,6 @@ for i, nome in enumerate(data_df['NOME DO ALUNO']):
         inserir_dados()
     except Exception:
         turno = 'tarde'
-        my_path = f'./marcacaoLegislacao_logFile/{date}/'  # Define o caminho que a pasta de log será criada
         try:
             mudar_turno()
         except Exception:
