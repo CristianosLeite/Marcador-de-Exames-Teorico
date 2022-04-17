@@ -18,14 +18,16 @@
 
 import base64
 import os
-import time
 import requests
-from sys import exit
-
 import pandas as pd
+
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from subprocess import CREATE_NO_WINDOW
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from time import sleep, strftime
+from sys import exit
 
 
 
@@ -46,7 +48,7 @@ def create_onedrive_direct_download(onedrive_link_file):
 onedrive_link = "your link here"
 direct_link = create_onedrive_direct_download(onedrive_link)
 data = pd.read_excel(direct_link, index_col=False)
-data_df = data.loc[(data['TAXA'] == "PG") & (data['SITUAÇÃO'] == "TESTE"), ["NOME DO ALUNO", "TELEFONE", "CPF"]]
+data_df = data.loc[(data['TAXA'] == "PG") & (data['SITUAÇÃO'] == "PENDENTE"), ["NOME DO ALUNO", "TELEFONE", "CPF"]]
 
 # Inicia o WebDriver
 
@@ -58,23 +60,42 @@ executable_path = "./"
 os.environ["webdriver.chrome.driver"] = executable_path
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_extension('Signa - Prodemge 1.4.0.0.crx')
-driver = webdriver.Chrome(options=chrome_options)
+
+# Remove Prompt do Driver
+chrome_service = ChromeService("./chromedriver")
+chrome_service.creationflags = CREATE_NO_WINDOW
+
+driver = webdriver.Chrome(options=chrome_options, service=chrome_service)
+
 
 # É necessário instalar o plugin Signa da Prodemge para que o sistema Detrannet possa ser acessado.
 # Verificar se na máquina já tem instalado o executável Signa Prodemge,
 # disponível em: "https://wwws.prodemge.gov.br/images/Aplicativos/Signa-2.2.00-Prodemge.exe"
 
 
-# indica qual página deve ser acessada
+# início
 driver.get(
     # Página de login do Detrannet
-    "https://empresas.detran.mg.gov.br/sdaf/paginas/ssc/login.asp")
+    "https://empresas.detran.mg.gov.br/sdaf/paginas/ssc/login.asp"
+    )
+
 # Defina o tempo necessário para a validação do certificado digital
-time.sleep(10)
+sleep(15) # tempo em segundos
 
 driver.get(
     # Página de marcação de legislação
-    "https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
+    "https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp"
+    )
+
+# Sem uso no momento
+def verifica_autenticacao():
+    driver.find_element(By.XPATH, '/html/body/p/table/tbody/tr[7]/td/b/font')
+    if True:
+        driver.quit()
+        exit()
+    else:
+        next
+
 
 # local para onde será feita a notificação do agendamento
 def send_message():
@@ -93,14 +114,14 @@ confirma = '/html/body/center/form/input[2]'
 confirma_exame = '/html/body/center/form/input[3]'
 limpar = '/html/body/center/form/input[3]'
 voltarSenha = '/html/body/center/form/div/table/tbody/tr/td/table/tbody/tr[2]/td/input[2]'
-date = time.strftime("%d %b %Y")
+date = strftime("%d %b %Y")
 
 
 def print_screen():
     # print screen
     driver.find_element(
         By.CSS_SELECTOR, 'body').screenshot(f'{my_path}/{nome}_{cpf}.png')
-    time.sleep(1)
+    sleep(1)
 
 
 def make_dir():
@@ -142,17 +163,17 @@ def inserir_dados():
     driver.find_element(By.XPATH, listbox_unidade).send_keys(unidade)
     if turno == 'manhã':
         driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.TAB)
-        time.sleep(1)
+        sleep(1)
         send_message()
     else:
         # <Keys.DOWN> agora é pressionado duas vezes.
         driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.DOWN, Keys.TAB)
-        time.sleep(1)
+        sleep(1)
         driver.find_element(By.XPATH, listbox_data).send_keys(Keys.DOWN)
         driver.find_element(By.XPATH, confirma).click()
         driver.find_element(By.XPATH, confirma_exame).click()
         driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
-        time.sleep(1)
+        sleep(1)
         send_message()
 
 
@@ -194,14 +215,14 @@ for i, nome in enumerate(data_df['NOME DO ALUNO']):
         driver.find_element(By.XPATH, textbox_cpf).send_keys(f"{cpf}" + Keys.ENTER)
         my_path = f'./senhas/{date}/'  # Define o caminho que a pasta de senhas será criada
         make_dir()
-        time.sleep(2)
+        sleep(2)
         print_screen()
         driver.find_element(By.XPATH, voltarSenha).click()
     except Exception:
         # Caso erro, volta e pula para o próximo aluno
         driver.find_element(By.XPATH, '/html/body/center/input').click()
         driver.find_element(By.XPATH, voltar).click()
-        time.sleep(1)
+        sleep(1)
 
 # Fecha o WebDriver e encerra o programa sem erros
 driver.quit()
