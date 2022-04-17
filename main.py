@@ -1,20 +1,25 @@
-# ##################################################################################################################
+# ###################################################################################################################
 # Os dados dos alunos estão armazenados em uma planilha,
 # para que os alunos sejam identificados é necessário acessar esta planilha.
-# Crie uma planilha em excel com os campos: 'TAXA', 'NOME DO ALUNO', 'CPF' e 'SITUAÇÃO'.
+# Crie uma planilha em excel com os campos: 'TAXA', 'NOME DO ALUNO', 'TELEFONE', 'CPF' e 'SITUAÇÃO'.
 # Só serão identificados os alunos que estiverem com o campo 'TAXA' marcado como "PG" e 'SITUAÇÃO' como "PENDENTE".
 # É importante que a planilha seja preenchida sempre com Uppercase.
-# Após a execução do script, altere a situação para que o sistema não tente marcar o exame novamente.
-# A planilha deverá ser compartilhada através de link e está disponível no OneDrive do usuário.
+# Após a execução do script, altere a situação na planilha para que o sistema não tente marcar o exame novamente.
+# A planilha deverá ser compartilhada através de link e estar disponível no OneDrive do usuário.
 # Para que a planilha fosse acessada, foi utilizada a API REST do OneDrive.
+# # https://docs.microsoft.com/pt-br/onedrive/developer/rest-api/api/shares_get?view=odsp-graph-online
 # É necessário uma assinatura do Office 365. Se for uma versão business, é necessário o contexto de autenticação.
 # Verificar documentação API REST do SharePoint.
-# ###################################################################################################################
+# A notificação é feita via WhatsApp utilizando API do ZapFácil (requer assinatura / verificar documentação ZapFácil).
+# ####################################################################################################################
 
+
+# Bibliotecas utilizadas
 
 import base64
 import os
 import time
+import requests
 from sys import exit
 
 import pandas as pd
@@ -25,7 +30,6 @@ from selenium.webdriver.common.keys import Keys
 
 
 # Acessa a Planilha
-
 
 def create_onedrive_direct_download(onedrive_link_file):
     # Acessa a a API REST do one drive
@@ -38,11 +42,11 @@ def create_onedrive_direct_download(onedrive_link_file):
 
 # Faz o download da planilha compartilhada através do link, na memória.
 
-# Compartilhe a planilha com link e defina a variável onerivelink_link = <"link">
-onedrive_link = "link"
+# Compartilhe a planilha com link e defina a variável onerivelink_link = "link"
+onedrive_link = "your link here"
 direct_link = create_onedrive_direct_download(onedrive_link)
 data = pd.read_excel(direct_link, index_col=False)
-data_df = data.loc[(data['TAXA'] == "PG") & (data['SITUAÇÃO'] == "PENDENTE"), ["NOME DO ALUNO", "CPF"]]
+data_df = data.loc[(data['TAXA'] == "PG") & (data['SITUAÇÃO'] == "TESTE"), ["NOME DO ALUNO", "TELEFONE", "CPF"]]
 
 # Inicia o WebDriver
 
@@ -72,11 +76,16 @@ driver.get(
     # Página de marcação de legislação
     "https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
 
+# local para onde será feita a notificação do agendamento
+def send_message():
+    requests.post("https://api.painel.zapfacil.com/api/webhooks/id", json=aluno)
+
+
 # Variáveis de objetos do Site
 # Verifique a unidade de agendamento em sua cidade
 textbox_cpf = '/html/body/center/form/table/tbody/tr[2]/td[2]/input'
 listbox_unidade = '//*[@id="localExame"]'
-unidade = "<Unidade>"  # Alterar para a unidade de agendamento da sua cidade
+unidade = "unidade de agendamento"  # Alterar para a unidade de agendamento da sua cidade
 listbox_turno = '//*[@id="turno"]'
 listbox_data = '//*[@id="ajaxInput"]/select'
 voltar = '/html/body/center/form/input[2]'
@@ -134,24 +143,33 @@ def inserir_dados():
     if turno == 'manhã':
         driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.TAB)
         time.sleep(1)
+        send_message()
     else:
         # <Keys.DOWN> agora é pressionado duas vezes.
         driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.DOWN, Keys.TAB)
         time.sleep(1)
-    driver.find_element(By.XPATH, listbox_data).send_keys(Keys.DOWN)
-    driver.find_element(By.XPATH, confirma).click()
-    driver.find_element(By.XPATH, confirma_exame).click()
-    driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
-    time.sleep(1)
+        driver.find_element(By.XPATH, listbox_data).send_keys(Keys.DOWN)
+        driver.find_element(By.XPATH, confirma).click()
+        driver.find_element(By.XPATH, confirma_exame).click()
+        driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
+        time.sleep(1)
+        send_message()
 
 
 # Marca os exames
 
 for i, nome in enumerate(data_df['NOME DO ALUNO']):
+    telefone_df: str = data_df['TELEFONE'].iloc[i]
     cpf_df: str = data_df['CPF'].iloc[i]
     # O sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
     cpf: str = '%011d' % int(cpf_df)  # Completa o cpf com os zeros elimidados
     turno = 'manhã'
+    #json aluno para POST
+    aluno = {
+        "nome":f"{nome}",
+        "telefone":f"{telefone_df}",
+        "cpf":f"{cpf}"
+        }
     try:
         inserir_dados()
     except Exception:
