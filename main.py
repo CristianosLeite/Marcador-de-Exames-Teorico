@@ -13,7 +13,6 @@
 # A notificação é feita via WhatsApp utilizando API do ZapFácil (requer assinatura / verificar documentação ZapFácil).
 # ####################################################################################################################
 
-
 # Bibliotecas utilizadas
 
 import base64
@@ -28,8 +27,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from time import sleep, strftime
 from sys import exit
-
-
 
 # Acessa a Planilha
 
@@ -67,11 +64,9 @@ chrome_service.creationflags = CREATE_NO_WINDOW
 
 driver = webdriver.Chrome(options=chrome_options, service=chrome_service)
 
-
 # É necessário instalar o plugin Signa da Prodemge para que o sistema Detrannet possa ser acessado.
 # Verificar se na máquina já tem instalado o executável Signa Prodemge,
 # disponível em: "https://wwws.prodemge.gov.br/images/Aplicativos/Signa-2.2.00-Prodemge.exe"
-
 
 # início
 driver.get(
@@ -111,6 +106,7 @@ limpar = '/html/body/center/form/input[3]'
 voltarSenha = '/html/body/center/form/div/table/tbody/tr/td/table/tbody/tr[2]/td/input[2]'
 date = strftime("%d %b %Y")
 
+# Funções
 
 def print_screen():
     # print screen
@@ -158,6 +154,7 @@ def inserir_dados():
     # insere os dados na página de marcação, tenta marcar o exame e retorna
     driver.find_element(By.XPATH, textbox_cpf).send_keys(f"{cpf}", Keys.TAB)
     driver.find_element(By.XPATH, listbox_unidade).send_keys(unidade)
+    # Verifica o turno
     if turno == 'manhã':
         driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.TAB)
         sleep(1)
@@ -167,11 +164,12 @@ def inserir_dados():
         driver.find_element(By.XPATH, listbox_turno).send_keys(Keys.DOWN, Keys.DOWN, Keys.TAB)
         sleep(1)
         driver.find_element(By.XPATH, listbox_data).send_keys(Keys.DOWN)
-        driver.find_element(By.XPATH, confirma).click()
-        driver.find_element(By.XPATH, confirma_exame).click()
-        driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
-        sleep(1)
-        send_message()
+    # Continua a execução
+    driver.find_element(By.XPATH, confirma).click()
+    driver.find_element(By.XPATH, confirma_exame).click()
+    driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0501.asp")
+    send_message()
+    sleep(1)
 
 
 # Marca os exames
@@ -195,6 +193,7 @@ for i, nome in enumerate(data_df['NOME DO ALUNO']):
         try:
             mudar_turno()
         except Exception:
+            driver.quit()
             exit()  # Caso ocorra uma excessão dentro de uma excessão o sistema encerra.
 
 
