@@ -63,6 +63,22 @@ agendamento_disponivel = textbox_cpf
 date = strftime("%d %b %Y")
 
 
+class Aluno:
+    @staticmethod
+    def create_aluno():
+        # <Cria uma lista de alunos>
+        lista_alunos = []
+        for i, nome in enumerate(data_df['NOME DO ALUNO']):
+            telefone_df: str = data_df['TELEFONE'].iloc[i]
+            # O sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
+            # necessário formatar para preencher os zeros eliminados
+            cpf_df: str = '%011d' % int(data_df['CPF'].iloc[i])
+            telefone: str = telefone_df
+            dados_pessoais = nome, telefone, cpf_df
+            lista_alunos.append(dados_pessoais)
+        return lista_alunos
+
+
 class Marcador:
     @staticmethod
     # Webdriver
@@ -86,7 +102,6 @@ class Marcador:
         # noinspection PyGlobalUndefined
         global driver
         driver = webdriver.Chrome(options=chrome_options, service=chrome_service)
-        print("Driver ok")
 
     @staticmethod
     def close_driver():
@@ -142,18 +157,18 @@ class Marcador:
         try:
             Marcador.pagina_inicial()
             Marcador.mudar_turno()
-            Marcador.inserir_dados()
-            Marcador.send_message(nome_json=aluno[0], telefone_json=aluno[1], cpf_json=aluno[2])
+            Marcador.inserir_dados(col[2])
+            Marcador.send_message(nome=col[0], telefone=col[1], cpf=col[2])
             Senhas.imprime_senhas()
         except Exception:
             # noinspection PyGlobalUndefined
             global my_path
             my_path = f'./logFile/{date}/'  # Define o caminho que a pasta de log será criada
             Senhas.make_dir()
-            Senhas.print_screen(path=my_path, nome=aluno[0], print_cpf=aluno[2])
+            Senhas.print_screen(path=my_path, nome=col[0], cpf=col[2])
 
     @staticmethod
-    def inserir_dados():
+    def inserir_dados(cpf):
         # <Insere os dados na página de marcação.>
         # Inserir cpf
         driver.find_element(By.XPATH, textbox_cpf).send_keys(cpf, Keys.TAB)
@@ -166,35 +181,15 @@ class Marcador:
             driver.find_element(By.XPATH, confirma_dados)))
         # <Aguarda confirmação do exame.>
         if driver.find_element(By.XPATH, confirma_exame).is_enabled():
-            pass
+            WebDriverWait(driver, timeout=120).until(ec.invisibility_of_element(
+                driver.find_element(By.XPATH, confirma_exame)))
         else:
             return Exception
 
     @staticmethod
-    def send_message(nome_json, telefone_json, cpf_json):
-        json_aluno = {
-            "nome": f"{nome_json}",
-            "telefone": f"{telefone_json}",
-            "cpf": f"{cpf_json}"
-        }
+    def send_message(**aluno):
         requests.post(credentials.MyCredentials.zap_facil_id,
-                      json=json_aluno)
-
-
-class Aluno:
-    @staticmethod
-    def create_aluno():
-        # <Cria uma lista de alunos>
-        lista_alunos = []
-        for i, nome in enumerate(data_df['NOME DO ALUNO']):
-            telefone_df: str = data_df['TELEFONE'].iloc[i]
-            # O sistema lê a coluna CPF como um INT e elimina os zeros iniciais do CPF
-            # necessário formatar para preencher os zeros eliminados
-            cpf_df: str = '%011d' % int(data_df['CPF'].iloc[i])
-            telefone: str = telefone_df
-            dados_pessoais = nome, telefone, cpf_df
-            lista_alunos.append(dados_pessoais)
-        return lista_alunos
+                      json=aluno)
 
 
 class Senhas:
@@ -205,10 +200,10 @@ class Senhas:
             os.makedirs(my_path)
 
     @staticmethod
-    def print_screen(path, nome, print_cpf):
+    def print_screen(path, nome, cpf):
         # print screen
         driver.find_element(
-            By.CSS_SELECTOR, 'body').screenshot(f'{path}/{nome}_{print_cpf}.png')
+            By.CSS_SELECTOR, 'body').screenshot(f'{path}/{nome}_{cpf}.png')
         sleep(1)
 
     @staticmethod
@@ -219,21 +214,25 @@ class Senhas:
         Senhas.make_dir()
         driver.get("https://empresas.detran.mg.gov.br/sdaf/paginas/sdaf0327.asp")
         sleep(1)
-        Senhas.print_screen(path=my_path, nome=aluno[0], print_cpf=aluno[2])
+        Senhas.print_screen(path=my_path, nome=col[0], cpf=col[2])
 
 
 if __name__ == "__main__":
     # Script
     Marcador.load_webdriver()
     Marcador.login()
-    for aluno in Aluno.create_aluno():
+    for col in Aluno.create_aluno():
+        '''
+        col[0] == nome
+        col[1] == telefone
+        col[2] == cpf
+        '''
         Marcador.definir_turno()
-        cpf = aluno[2]
         # noinspection PyBroadException
         try:
             Marcador.pagina_inicial()
-            Marcador.inserir_dados()
-            Marcador.send_message(nome_json=aluno[0], telefone_json=aluno[1], cpf_json=aluno[2])
+            Marcador.inserir_dados(col[2])
+            Marcador.send_message(nome=col[0], telefone=col[1], cpf=col[2])
             Senhas.imprime_senhas()
         except Exception:
             # noinspection PyBroadException
