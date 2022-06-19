@@ -30,6 +30,7 @@ from selenium.webdriver.common.keys import Keys
 from time import sleep, strftime
 
 
+# <Acessa API do OneDrive>
 def create_onedrive_direct_download(onedrive_link_file):
     # Acessa a API REST do one drive
     data_bytes64 = base64.b64encode(bytes(onedrive_link_file, 'utf-8'))
