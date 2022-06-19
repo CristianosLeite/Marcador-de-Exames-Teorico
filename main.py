@@ -119,7 +119,7 @@ class Marcador:
         # noinspection PyBroadException
         try:
             # <Aguarda a validação do certificado digital.>
-            WebDriverWait(driver, timeout=60).until(ec.title_is(title))
+            WebDriverWait(driver, timeout=120).until(ec.title_is(title))
         except Exception:
             Marcador.close_driver()
 
